@@ -1,15 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Interpreted
 {
     public partial class RuntimeEnvironment
     {
         private void InstrVar(string[] args)
-        {            
+        {
             if (args.Length == 1)
             {
                 AddVariable(new Variable(args[0]));
@@ -36,7 +33,7 @@ namespace Interpreted
                 {
                     throw new UndefinedVariableException(args[i]);
                 }
-                
+
                 varValues.Add(variables[varIdx].ToString());
             }
 
