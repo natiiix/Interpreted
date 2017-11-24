@@ -28,13 +28,11 @@ namespace Interpreted
             // Iterate through all the lines
             for (int i = 0; i < lines.Length; i++)
             {
-                // List for string substitutions on this line
-                List<StringSubstitution> newSubstitutions = null;
                 // Clean this line up
-                string lineClean = CleanLine(lines[i], out newSubstitutions);
+                string lineClean = CleanLine(lines[i], out List<StringSubstitution> newSubstitutions);
 
-                // Skip empty lines
-                if (lineClean.Length == 0)
+                // Skip empty lines and comments
+                if (lineClean.Length == 0 || lineClean.StartsWith("#") || lineClean.StartsWith("//"))
                 {
                     continue;
                 }

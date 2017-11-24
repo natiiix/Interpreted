@@ -59,24 +59,27 @@ namespace Interpreted
 
             switch (command.ToLower())
             {
-                case "var":
-                    InstrVar(arguments);
-                    programCounter++;
-                    break;
-
                 case "print":
                     InstrPrint(arguments);
-                    programCounter++;
+                    break;
+
+                case "var":
+                    InstrVar(arguments);
+                    break;
+
+                case "delete":
+                    InstrDelete(arguments);
                     break;
 
                 case "set":
                     InstrSet(arguments);
-                    programCounter++;
                     break;
 
                 default:
                     throw new InstructionException("Unrecognized command");
             }
+
+            programCounter++;
         }
 
         private void AddVariable(Variable var)
@@ -88,6 +91,20 @@ namespace Interpreted
             else
             {
                 throw new InstructionException("Variable with the identifier " + var.Name.Encapsulate('"') + " is already defined");
+            }
+        }
+
+        private void DeleteVariable(string name)
+        {
+            int varIdx = variables.FindIndexByName(name);
+
+            if (varIdx >= 0)
+            {
+                variables.RemoveAt(varIdx);
+            }
+            else
+            {
+                throw new VariableUndefinedException(name);
             }
         }
     }

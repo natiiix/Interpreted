@@ -57,7 +57,8 @@
     <Compile Include="RuntimeEnvironment_Instructions.cs" />
     <Compile Include="RuntimeException.cs" />
     <Compile Include="StringSubstitution.cs" />
-    <Compile Include="UndefinedVariableException.cs" />
+    <Compile Include="VariableUndefinedException.cs" />
+    <Compile Include="ValueContainer.cs" />
     <Compile Include="Variable.cs" />
     <Compile Include="VariableValueException.cs" />
   </ItemGroup>

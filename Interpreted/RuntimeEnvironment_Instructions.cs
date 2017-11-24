@@ -1,79 +1,141 @@
 ﻿using System;
+using System.Linq;
 using System.Collections.Generic;
 
 namespace Interpreted
 {
     public partial class RuntimeEnvironment
     {
-        private void InstrVar(string[] args)
+        private ValueContainer GetValueOf(string source)
         {
-            if (args.Length == 1)
+            // Try to treat the source value as a variable name
+            int varIdx = variables.FindIndexByName(source);
+
+            // Variable with the specified name exists
+            if (varIdx >= 0)
             {
-                AddVariable(new Variable(args[0]));
+                // Returns its value
+                return variables[varIdx].Value;
             }
-            else if (args.Length == 2)
-            {
-                AddVariable(new Variable(args[0], args[1]));
-            }
+            // There is no such variable
             else
+            {
+                // Parse the value from the input string
+                return ValueContainer.Parse(source);
+            }
+        }
+
+        private ValueContainer GetValueOf(IEnumerable<string> args)
+        {
+            int argsCount = args.Count();
+
+            // No arguments
+            if (argsCount == 0)
+            {
+                // Returns a null value
+                return new ValueContainer();
+            }
+            // Single arugment
+            else if (argsCount == 1)
+            {
+                // Returns the value of the single argument
+                return GetValueOf(args.First());
+            }
+            // 2 or more arguments
+            // Operations are evaluated from left to right regardless of the mathematical operator precedence
+            else
+            {
+                // Value of the last operand
+                ValueContainer operandValue = GetValueOf(args.Last());
+                // Last operator
+                string strOperator = args.ElementAt(argsCount - 2);
+                // Remaining arguments
+                List<string> remainingArguments = args.Take(argsCount - 2).ToList();
+
+                // Addition
+                if (strOperator == "+")
+                {
+                    return GetValueOf(remainingArguments) + operandValue;
+                }
+                // Subtraction
+                else if (strOperator == "-")
+                {
+                    return GetValueOf(remainingArguments) - operandValue;
+                }
+                // Multiplication
+                else if (strOperator == "*")
+                {
+                    return GetValueOf(remainingArguments) * operandValue;
+                }
+                // Division
+                else if (strOperator == "/")
+                {
+                    return GetValueOf(remainingArguments) / operandValue;
+                }
+                // Unrecognized operator
+                else
+                {
+                    throw new InstructionException("Unrecognized operator " + strOperator.Encapsulate('"'));
+                }
+            }
+        }
+
+        private void InstrPrint(IEnumerable<string> args)
+        {
+            // Print an empty new line
+            if (args.Count() == 0)
+            {
+                Console.WriteLine();
+            }
+            // Print a value
+            else
+            {
+                Console.WriteLine(GetValueOf(args).ToString());
+            }
+        }
+
+        private void InstrVar(IEnumerable<string> args)
+        {
+            if (args.Count() == 0)
             {
                 throw new InstructionSyntaxException("VAR <name> [value]");
             }
+
+            AddVariable(new Variable(args.ElementAt(0), GetValueOf(args.Skip(1))));
         }
 
-        private void InstrPrint(string[] args)
+        private void InstrDelete(IEnumerable<string> args)
         {
-            List<string> varValues = new List<string>();
-
-            for (int i = 0; i < args.Length; i++)
+            if (args.Count() != 1)
             {
-                int varIdx = variables.FindIndexByName(args[i]);
-
-                if (varIdx < 0)
-                {
-                    throw new UndefinedVariableException(args[i]);
-                }
-
-                varValues.Add(variables[varIdx].ToString());
+                throw new InstructionSyntaxException("DELETE <variable name>");
             }
 
-            Console.WriteLine(string.Join(" ", varValues));
+            DeleteVariable(args.First());
         }
 
-        private void InstrSet(string[] args)
+        private void InstrSet(IEnumerable<string> args)
         {
-            if (args.Length == 2)
+            if (args.Count() < 2)
             {
-                string targetVarName = args[0];
-
-                // Find target variable
-                int targetIdx = variables.FindIndexByName(targetVarName);
-
-                if (targetIdx < 0)
-                {
-                    throw new UndefinedVariableException(targetVarName);
-                }
-
-                string source = args[1];
-
-                // Try to treat the source value as a variable name
-                int sourceIdx = variables.FindIndexByName(source);
-
-                // There is no such variable
-                if (sourceIdx < 0)
-                {
-                    variables[targetIdx] = new Variable(targetVarName, source);
-                }
-                // There is a variable with the name specified in source
-                else
-                {
-                    variables[targetIdx].CopyValueFrom(variables[sourceIdx]);
-                }
+                throw new InstructionSyntaxException("SET <target variable> <source>");
             }
-            else
+
+            // Find target variable
+            string targetVarName = args.ElementAt(0);
+
+            int targetIdx = variables.FindIndexByName(targetVarName);
+
+            if (targetIdx < 0)
             {
-                throw new InstructionSyntaxException("SET <target variable> <source variable or literal value>");
+                throw new VariableUndefinedException(targetVarName);
             }
+
+            // Get the source value
+            ValueContainer value = GetValueOf(args.Skip(1));
+
+            // Copy the source value to the target variable
+            variables[targetIdx].Value = value;
         }
     }
 }
